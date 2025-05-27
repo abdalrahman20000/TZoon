@@ -13,11 +13,11 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Tools />} />
-          <Route path="/tools" element={<Tools />} />
-          <Route path="/gantt-chart/:projectName" element={<GanttChart />} />
+          <Route path="/TZoon/" element={<Tools />} />
+          <Route path="/TZoon/tools" element={<Tools />} />
+          <Route path="/TZoon/gantt-chart/:projectName" element={<GanttChart />} />
           <Route
-            path="/gantt-project-dashboard"
+            path="/TZoon/gantt-project-dashboard"
             element={<GanttProjectDashboard />}
           />
         </Routes>

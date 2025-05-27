@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .scrollbar-track-rounded-full::-webkit-scrollbar-track {
+    border-radius: 9999px;
+  }
+  .scrollbar-thumb-rounded-full::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+  }
+}

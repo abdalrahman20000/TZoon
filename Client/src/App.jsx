@@ -11,7 +11,7 @@ function App() {
 
   return (
     <>
-      <BrowserRouter>
+      <BrowserRouter basename="/TZoon/">
         <Routes>
           <Route path="/" element={<Tools />} />
           <Route path="/tools" element={<Tools />} />
@@ -20,6 +20,8 @@ function App() {
             path="/gantt-project-dashboard"
             element={<GanttProjectDashboard />}
           />
+
+          <Route path="*" element={<Tools />} />
         </Routes>
       </BrowserRouter>
     </>

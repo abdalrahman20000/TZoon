@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Link } from "react-router-dom";
 import {
   Settings,
   Plus,
@@ -8,7 +9,6 @@ import {
   X,
   Edit2,
   Palette,
-  Link,
   Type,
   Wrench,
   ChevronRight,
@@ -595,75 +595,6 @@ function Header() {
     reader.readAsDataURL(file);
   };
 
-  const handleToolStatusChange = (index) => {
-    const updatedTools = [...appearance.tools];
-    updatedTools[index].comingSoon = !updatedTools[index].comingSoon;
-    updateAppearance({ ...appearance, tools: updatedTools });
-  };
-
-  const handleEditTool = (index) => {
-    setEditingToolIndex(index);
-    setNewTool({ ...appearance.tools[index] });
-    setShowToolForm(true);
-  };
-
-  const handleAddNewTool = () => {
-    setEditingToolIndex(null);
-    setNewTool({
-      icon: "settings",
-      name: "",
-      description: "",
-      status: "",
-      bgColor: "from-blue-600 to-blue-800",
-      imagePath: "",
-      comingSoon: false,
-      path: "",
-    });
-    setShowToolForm(true);
-  };
-
-  const handleSaveTool = () => {
-    if (!newTool.name.trim()) return;
-
-    const updatedTools = [...appearance.tools];
-    if (editingToolIndex !== null) {
-      updatedTools[editingToolIndex] = newTool;
-    } else {
-      updatedTools.push(newTool);
-    }
-    updateAppearance({ ...appearance, tools: updatedTools });
-    setShowToolForm(false);
-    setNewTool({
-      icon: "settings",
-      name: "",
-      description: "",
-      status: "",
-      bgColor: "from-blue-600 to-blue-800",
-      imagePath: "",
-      comingSoon: false,
-      path: "",
-    });
-  };
-
-  const handleCancelTool = () => {
-    setShowToolForm(false);
-    setNewTool({
-      icon: "settings",
-      name: "",
-      description: "",
-      status: "",
-      bgColor: "from-blue-600 to-blue-800",
-      imagePath: "",
-      comingSoon: false,
-      path: "",
-    });
-  };
-
-  const handleDeleteTool = (index) => {
-    const updatedTools = appearance.tools.filter((_, i) => i !== index);
-    updateAppearance({ ...appearance, tools: updatedTools });
-  };
-
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
   };
@@ -781,9 +712,9 @@ function Header() {
 
               <nav className="hidden lg:flex items-center space-x-1">
                 {appearance.staticLinks.map((link, index) => (
-                  <a
+                  <Link
                     key={`static-${index}`}
-                    href={link.url}
+                    to={link.url}
                     className="px-4 py-2 rounded-lg font-medium transition-smooth hover:bg-white/10 relative overflow-hidden group hover-lift"
                     style={{
                       color: appearance.colors.text,
@@ -793,28 +724,26 @@ function Header() {
                     <span className="relative z-10 transition-smooth group-hover:text-white">
                       {link.name}
                     </span>
-                  </a>
+                  </Link>
                 ))}
                 {appearance.userLinks.map((link, index) => (
-                  <a
+                  <Link
                     key={`user-${index}`}
-                    href={link.url}
+                    to={link.url}
                     className="px-4 py-2 rounded-lg font-medium transition-smooth hover:bg-white/10 flex items-center space-x-2 relative overflow-hidden group hover-lift"
                     style={{
                       color: appearance.colors.text,
                       animationDelay: `${0.3 + index * 0.1}s`,
                     }}
-                    target="_blank"
-                    rel="noopener noreferrer"
                   >
-                    <Link
+                    <ExternalLink
                       size={16}
                       className="relative z-10 transition-smooth group-hover:scale-110"
                     />
                     <span className="relative z-10 transition-smooth group-hover:text-white">
                       {link.name}
                     </span>
-                  </a>
+                  </Link>
                 ))}
               </nav>
             </div>
@@ -852,22 +781,36 @@ function Header() {
             <nav className="lg:hidden mt-4 pt-4 border-t border-white/20 animate-slideDown">
               <div className="flex flex-col space-y-2">
                 {[...appearance.staticLinks, ...appearance.userLinks].map(
-                  (link, index) => (
-                    <a
-                      key={`mobile-${index}`}
-                      href={link.url}
-                      className="px-4 py-3 rounded-lg font-medium transition-smooth hover:bg-white/10 relative overflow-hidden group"
-                      style={{
+                  (link, index) => {
+                    const isExternal = link.url.startsWith("http");
+
+                    const commonProps = {
+                      key: `mobile-${index}`,
+                      className:
+                        "px-4 py-3 rounded-lg font-medium transition-smooth hover:bg-white/10 relative overflow-hidden group",
+                      style: {
                         color: appearance.colors.text,
                         animationDelay: `${index * 0.1}s`,
-                      }}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <span className="relative z-10 transition-smooth group-hover:text-white">
-                        {link.name}
-                      </span>
-                    </a>
-                  )
+                      },
+                      onClick: () => setMobileMenuOpen(false),
+                      children: (
+                        <span className="relative z-10 transition-smooth group-hover:text-white">
+                          {link.name}
+                        </span>
+                      ),
+                    };
+
+                    return isExternal ? (
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        {...commonProps}
+                      />
+                    ) : (
+                      <Link to={link.url} {...commonProps} />
+                    );
+                  }
                 )}
               </div>
             </nav>
@@ -1184,49 +1127,66 @@ function Header() {
 
                       {/* Existing Links */}
                       <div className="space-y-2">
-                        {appearance.userLinks.map((link, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg animate-fadeIn"
-                            style={{ animationDelay: `${index * 0.1}s` }}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <span className="font-medium text-gray-900 block">
-                                {link.name}
-                              </span>
-                              <div className="flex items-center space-x-2 mt-1">
-                                <span
-                                  className="text-sm text-gray-500 truncate flex-1"
-                                  title={link.url}
-                                >
-                                  {truncateUrl(link.url)}
-                                </span>
-                                <button
-                                  onClick={() => copyToClipboard(link.url)}
-                                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-smooth hover-scale"
-                                  title="Copy URL"
-                                >
-                                  <Copy size={12} />
-                                </button>
-                                <a
-                                  href={link.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-smooth hover-scale"
-                                  title="Open URL"
-                                >
-                                  <ExternalLink size={12} />
-                                </a>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => handleDeleteLink(index)}
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-smooth ml-3 hover-scale"
+                        {appearance.userLinks.map((link, index) => {
+                          const isExternal = link.url.startsWith("http");
+
+                          return (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg animate-fadeIn"
+                              style={{ animationDelay: `${index * 0.1}s` }}
                             >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        ))}
+                              <div className="flex-1 min-w-0">
+                                <span className="font-medium text-gray-900 block">
+                                  {link.name}
+                                </span>
+                                <div className="flex items-center space-x-2 mt-1">
+                                  <span
+                                    className="text-sm text-gray-500 truncate flex-1"
+                                    title={link.url}
+                                  >
+                                    {truncateUrl(link.url)}
+                                  </span>
+
+                                  <button
+                                    onClick={() => copyToClipboard(link.url)}
+                                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-smooth hover-scale"
+                                    title="Copy URL"
+                                  >
+                                    <Copy size={12} />
+                                  </button>
+
+                                  {isExternal ? (
+                                    <a
+                                      href={link.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-smooth hover-scale"
+                                      title="Open URL"
+                                    >
+                                      <ExternalLink size={12} />
+                                    </a>
+                                  ) : (
+                                    <Link
+                                      to={link.url}
+                                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-smooth hover-scale"
+                                      title="Open Link"
+                                    >
+                                      <ExternalLink size={12} />
+                                    </Link>
+                                  )}
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() => handleDeleteLink(index)}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-smooth ml-3 hover-scale"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -1474,49 +1434,83 @@ function Footer() {
                 <div className="flex gap-3">
                   {/* Static Links */}
                   {appearance.staticLinks &&
-                    appearance.staticLinks.map((link, index) => (
-                      <a
-                        key={`static-footer-${link.name}`}
-                        href={link.url}
-                        className="block opacity-80 hover:opacity-100 transition-smooth hover-lift text-sm py-1 hover:translate-x-1"
-                        style={{
-                          color: appearance.colors.text,
-                          animationDelay: `${index * 0.1}s`,
-                        }}
-                      >
-                        {link.name}
-                      </a>
-                    ))}
+                    appearance.staticLinks.map((link, index) => {
+                      const isExternal = link.url.startsWith("http");
 
-                  {/* User Links */}
+                      return isExternal ? (
+                        <a
+                          key={`static-footer-${link.name}`}
+                          href={link.url}
+                          className="block opacity-80 hover:opacity-100 transition-smooth hover-lift text-sm py-1 hover:translate-x-1"
+                          style={{
+                            color: appearance.colors.text,
+                            animationDelay: `${index * 0.1}s`,
+                          }}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {link.name}
+                        </a>
+                      ) : (
+                        <Link
+                          key={`static-footer-${link.name}`}
+                          to={link.url}
+                          className="block opacity-80 hover:opacity-100 transition-smooth hover-lift text-sm py-1 hover:translate-x-1"
+                          style={{
+                            color: appearance.colors.text,
+                            animationDelay: `${index * 0.1}s`,
+                          }}
+                        >
+                          {link.name}
+                        </Link>
+                      );
+                    })}
                   {appearance.userLinks &&
-                    appearance.userLinks.map((link, index) => (
-                      <a
-                        key={`user-footer-${link.name}`}
-                        href={link.url}
-                        className="flex items-center space-x-2 opacity-80 hover:opacity-100 transition-smooth hover-lift text-sm py-1 hover:translate-x-1 group"
-                        style={{
-                          color: appearance.colors.text,
-                          animationDelay: `${
-                            (appearance.staticLinks?.length || 0) + index * 0.1
-                          }s`,
-                        }}
-                        target={
-                          link.url.startsWith("http") ? "_blank" : undefined
-                        }
-                        rel={
-                          link.url.startsWith("http")
-                            ? "noopener noreferrer"
-                            : undefined
-                        }
-                      >
-                        <ExternalLink
-                          size={14}
-                          className="opacity-60 group-hover:opacity-100 transition-smooth"
-                        />
-                        <span>{link.name}</span>
-                      </a>
-                    ))}
+                    appearance.userLinks.map((link, index) => {
+                      const isExternal = link.url.startsWith("http");
+
+                      return isExternal ? (
+                        <a
+                          key={`user-footer-${link.name}`}
+                          href={link.url}
+                          className="flex items-center space-x-2 opacity-80 hover:opacity-100 transition-smooth hover-lift text-sm py-1 hover:translate-x-1 group"
+                          style={{
+                            color: appearance.colors.text,
+                            animationDelay: `${
+                              (appearance.staticLinks?.length || 0) +
+                              index * 0.1
+                            }s`,
+                          }}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink
+                            size={14}
+                            className="opacity-60 group-hover:opacity-100 transition-smooth"
+                          />
+                          <span>{link.name}</span>
+                        </a>
+                      ) : (
+                        <Link
+                          key={`user-footer-${link.name}`}
+                          to={link.url}
+                          className="flex items-center space-x-2 opacity-80 hover:opacity-100 transition-smooth hover-lift text-sm py-1 hover:translate-x-1 group"
+                          style={{
+                            color: appearance.colors.text,
+                            animationDelay: `${
+                              (appearance.staticLinks?.length || 0) +
+                              index * 0.1
+                            }s`,
+                          }}
+                        >
+                          <ExternalLink
+                            size={14}
+                            className="opacity-60 group-hover:opacity-100 transition-smooth"
+                          />
+                          <span>{link.name}</span>
+                        </Link>
+                      );
+                    })}
                 </div>
               </div>
 
@@ -1527,24 +1521,44 @@ function Footer() {
                     Social Media
                   </h4>
                   <div className="flex flex-wrap gap-3 lg:justify-end">
-                    {(appearance.socialLinks || []).map((social, index) => (
-                      <a
-                        key={index}
-                        href={social.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-3 bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-smooth hover-scale relative overflow-hidden group"
-                        style={{ animationDelay: `${index * 0.1}s` }}
-                        title={social.name}
-                      >
+                    {(appearance.socialLinks || []).map((social, index) => {
+                      const isExternal = social.url.startsWith("http");
+
+                      const commonProps = {
+                        key: index,
+                        className:
+                          "p-3 bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-smooth hover-scale relative overflow-hidden group",
+                        style: { animationDelay: `${index * 0.1}s` },
+                        title: social.name,
+                      };
+
+                      const icon = renderSocialIcon(
+                        social.icon,
+                        18,
+                        "hover:scale-110 transition-transform duration-300 relative z-10"
+                      );
+
+                      const overlay = (
                         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-smooth"></div>
-                        {renderSocialIcon(
-                          social.icon,
-                          18,
-                          "hover:scale-110 transition-transform duration-300 relative z-10"
-                        )}
-                      </a>
-                    ))}
+                      );
+
+                      return isExternal ? (
+                        <a
+                          {...commonProps}
+                          href={social.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {overlay}
+                          {icon}
+                        </a>
+                      ) : (
+                        <Link {...commonProps} to={social.url}>
+                          {overlay}
+                          {icon}
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -1630,7 +1644,7 @@ const GanttProjectsDashboard = () => {
   // Function to navigate to the Gantt chart page with project data
   const openGanttChart = (project) => {
     const slugifiedName = project.name.toLowerCase().replace(/\s+/g, "-");
-    window.location.href = `/gantt-chart/${slugifiedName}`;
+    return `/gantt-chart/${slugifiedName}`;
   };
 
   // Function to handle showing the new project modal
@@ -2024,7 +2038,7 @@ const GanttProjectsDashboard = () => {
                           onClick={handleCreateNewGanttChart}
                           className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white transition-all duration-300 transform hover:scale-105 hover-scale"
                           style={{
-                            background: `linear-gradient(135deg, ${appearance.colors.primary} 0%, ${appearance.colors.secondary} 100%)`,
+                            backgroundColor: appearance.colors.primary,
                           }}
                         >
                           <Plus className="mr-2 h-5 w-5" />
@@ -2047,13 +2061,13 @@ const GanttProjectsDashboard = () => {
                   {projects.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {filteredProjects.map((project, index) => (
-                        <div
+                        <Link
                           key={project.id}
+                          to={openGanttChart(project)}
                           className="group bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-xl cursor-pointer 
                             transform transition-all duration-500 ease-out
                             hover:translate-y-[-5px] animate-fadeIn hover-lift"
                           style={{ animationDelay: `${index * 100}ms` }}
-                          onClick={() => openGanttChart(project)}
                           onMouseEnter={() => setHoveredProject(project.id)}
                           onMouseLeave={() => setHoveredProject(null)}
                         >
@@ -2152,7 +2166,7 @@ const GanttProjectsDashboard = () => {
                               </button>
                             </div>
                           </div>
-                        </div>
+                        </Link>
                       ))}
 
                       {/* Add new project card */}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import {
   Settings,
   Plus,
@@ -8,7 +9,6 @@ import {
   X,
   Edit2,
   Palette,
-  Link,
   Type,
   Wrench,
   ChevronRight,
@@ -862,9 +862,9 @@ function Header() {
 
               <nav className="hidden lg:flex items-center space-x-1">
                 {appearance.staticLinks.map((link, index) => (
-                  <a
+                  <Link
                     key={`static-${index}`}
-                    href={link.url}
+                    to={link.url}
                     className="px-4 py-2 rounded-lg font-medium transition-smooth hover:bg-white/10 relative overflow-hidden group hover-lift"
                     style={{
                       color: appearance.colors.text,
@@ -874,29 +874,52 @@ function Header() {
                     <span className="relative z-10 transition-smooth group-hover:text-white">
                       {link.name}
                     </span>
-                  </a>
+                  </Link>
                 ))}
-                {appearance.userLinks.map((link, index) => (
-                  <a
-                    key={`user-${index}`}
-                    href={link.url}
-                    className="px-4 py-2 rounded-lg font-medium transition-smooth hover:bg-white/10 flex items-center space-x-2 relative overflow-hidden group hover-lift"
-                    style={{
-                      color: appearance.colors.text,
-                      animationDelay: `${0.3 + index * 0.1}s`,
-                    }}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+
+                {appearance.userLinks.map((link, index) => {
+                  const isExternal = link.url.startsWith("http");
+
+                  return isExternal ? (
+                    <a
+                      key={`user-${index}`}
+                      href={link.url}
+                      className="px-4 py-2 rounded-lg font-medium transition-smooth hover:bg-white/10 flex items-center space-x-2 relative overflow-hidden group hover-lift"
+                      style={{
+                        color: appearance.colors.text,
+                        animationDelay: `${0.3 + index * 0.1}s`,
+                      }}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink
+                        size={16}
+                        className="relative z-10 transition-smooth group-hover:scale-110"
+                      />
+                      <span className="relative z-10 transition-smooth group-hover:text-white">
+                        {link.name}
+                      </span>
+                    </a>
+                  ) : (
                     <Link
-                      size={16}
-                      className="relative z-10 transition-smooth group-hover:scale-110"
-                    />
-                    <span className="relative z-10 transition-smooth group-hover:text-white">
-                      {link.name}
-                    </span>
-                  </a>
-                ))}
+                      key={`user-${index}`}
+                      to={link.url}
+                      className="px-4 py-2 rounded-lg font-medium transition-smooth hover:bg-white/10 flex items-center space-x-2 relative overflow-hidden group hover-lift"
+                      style={{
+                        color: appearance.colors.text,
+                        animationDelay: `${0.3 + index * 0.1}s`,
+                      }}
+                    >
+                      <Link
+                        size={16}
+                        className="relative z-10 transition-smooth group-hover:scale-110"
+                      />
+                      <span className="relative z-10 transition-smooth group-hover:text-white">
+                        {link.name}
+                      </span>
+                    </Link>
+                  );
+                })}
               </nav>
             </div>
 
@@ -933,22 +956,43 @@ function Header() {
             <nav className="lg:hidden mt-4 pt-4 border-t border-white/20 animate-slideDown">
               <div className="flex flex-col space-y-2">
                 {[...appearance.staticLinks, ...appearance.userLinks].map(
-                  (link, index) => (
-                    <a
-                      key={`mobile-${index}`}
-                      href={link.url}
-                      className="px-4 py-3 rounded-lg font-medium transition-smooth hover:bg-white/10 relative overflow-hidden group"
-                      style={{
-                        color: appearance.colors.text,
-                        animationDelay: `${index * 0.1}s`,
-                      }}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <span className="relative z-10 transition-smooth group-hover:text-white">
-                        {link.name}
-                      </span>
-                    </a>
-                  )
+                  (link, index) => {
+                    const isExternal = link.url.startsWith("http");
+
+                    return isExternal ? (
+                      <a
+                        key={`mobile-${index}`}
+                        href={link.url}
+                        className="px-4 py-3 rounded-lg font-medium transition-smooth hover:bg-white/10 relative overflow-hidden group"
+                        style={{
+                          color: appearance.colors.text,
+                          animationDelay: `${index * 0.1}s`,
+                        }}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <span className="relative z-10 transition-smooth group-hover:text-white">
+                          {link.name}
+                        </span>
+                      </a>
+                    ) : (
+                      <Link
+                        key={`mobile-${index}`}
+                        to={link.url}
+                        className="px-4 py-3 rounded-lg font-medium transition-smooth hover:bg-white/10 relative overflow-hidden group"
+                        style={{
+                          color: appearance.colors.text,
+                          animationDelay: `${index * 0.1}s`,
+                        }}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <span className="relative z-10 transition-smooth group-hover:text-white">
+                          {link.name}
+                        </span>
+                      </Link>
+                    );
+                  }
                 )}
               </div>
             </nav>
@@ -1266,49 +1310,64 @@ function Header() {
 
                       {/* Existing Links */}
                       <div className="space-y-2">
-                        {appearance.userLinks.map((link, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg animate-fadeIn"
-                            style={{ animationDelay: `${index * 0.1}s` }}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <span className="font-medium text-gray-900 block">
-                                {link.name}
-                              </span>
-                              <div className="flex items-center space-x-2 mt-1">
-                                <span
-                                  className="text-sm text-gray-500 truncate flex-1"
-                                  title={link.url}
-                                >
-                                  {truncateUrl(link.url)}
-                                </span>
-                                <button
-                                  onClick={() => copyToClipboard(link.url)}
-                                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-smooth hover-scale"
-                                  title="Copy URL"
-                                >
-                                  <Copy size={12} />
-                                </button>
-                                <a
-                                  href={link.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-smooth hover-scale"
-                                  title="Open URL"
-                                >
-                                  <ExternalLink size={12} />
-                                </a>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => handleDeleteLink(index)}
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-smooth ml-3 hover-scale"
+                        {appearance.userLinks.map((link, index) => {
+                          const isExternal = link.url.startsWith("http");
+
+                          return (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg animate-fadeIn"
+                              style={{ animationDelay: `${index * 0.1}s` }}
                             >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        ))}
+                              <div className="flex-1 min-w-0">
+                                <span className="font-medium text-gray-900 block">
+                                  {link.name}
+                                </span>
+                                <div className="flex items-center space-x-2 mt-1">
+                                  <span
+                                    className="text-sm text-gray-500 truncate flex-1"
+                                    title={link.url}
+                                  >
+                                    {truncateUrl(link.url)}
+                                  </span>
+                                  <button
+                                    onClick={() => copyToClipboard(link.url)}
+                                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-smooth hover-scale"
+                                    title="Copy URL"
+                                  >
+                                    <Copy size={12} />
+                                  </button>
+
+                                  {isExternal ? (
+                                    <a
+                                      href={link.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-smooth hover-scale"
+                                      title="Open URL"
+                                    >
+                                      <ExternalLink size={12} />
+                                    </a>
+                                  ) : (
+                                    <Link
+                                      to={link.url}
+                                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-smooth hover-scale"
+                                      title="Open URL"
+                                    >
+                                      <ExternalLink size={12} />
+                                    </Link>
+                                  )}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteLink(index)}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-smooth ml-3 hover-scale"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -1886,52 +1945,85 @@ function Footer() {
                 <h4 className="text-lg font-semibold mb-6 bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
                   Quick Links
                 </h4>
+
                 <div className="flex gap-3">
                   {/* Static Links */}
                   {appearance.staticLinks &&
-                    appearance.staticLinks.map((link, index) => (
-                      <a
-                        key={`static-footer-${link.name}`}
-                        href={link.url}
-                        className="block opacity-80 hover:opacity-100 transition-smooth hover-lift text-sm py-1 hover:translate-x-1"
-                        style={{
-                          color: appearance.colors.text,
-                          animationDelay: `${index * 0.1}s`,
-                        }}
-                      >
-                        {link.name}
-                      </a>
-                    ))}
+                    appearance.staticLinks.map((link, index) => {
+                      const isExternal = link.url.startsWith("http");
+                      return isExternal ? (
+                        <a
+                          key={`static-footer-${link.name}`}
+                          href={link.url}
+                          className="block opacity-80 hover:opacity-100 transition-smooth hover-lift text-sm py-1 hover:translate-x-1"
+                          style={{
+                            color: appearance.colors.text,
+                            animationDelay: `${index * 0.1}s`,
+                          }}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {link.name}
+                        </a>
+                      ) : (
+                        <Link
+                          key={`static-footer-${link.name}`}
+                          to={link.url}
+                          className="block opacity-80 hover:opacity-100 transition-smooth hover-lift text-sm py-1 hover:translate-x-1"
+                          style={{
+                            color: appearance.colors.text,
+                            animationDelay: `${index * 0.1}s`,
+                          }}
+                        >
+                          {link.name}
+                        </Link>
+                      );
+                    })}
 
                   {/* User Links */}
                   {appearance.userLinks &&
-                    appearance.userLinks.map((link, index) => (
-                      <a
-                        key={`user-footer-${link.name}`}
-                        href={link.url}
-                        className="flex items-center space-x-2 opacity-80 hover:opacity-100 transition-smooth hover-lift text-sm py-1 hover:translate-x-1 group"
-                        style={{
-                          color: appearance.colors.text,
-                          animationDelay: `${
-                            (appearance.staticLinks?.length || 0) + index * 0.1
-                          }s`,
-                        }}
-                        target={
-                          link.url.startsWith("http") ? "_blank" : undefined
-                        }
-                        rel={
-                          link.url.startsWith("http")
-                            ? "noopener noreferrer"
-                            : undefined
-                        }
-                      >
-                        <ExternalLink
-                          size={14}
-                          className="opacity-60 group-hover:opacity-100 transition-smooth"
-                        />
-                        <span>{link.name}</span>
-                      </a>
-                    ))}
+                    appearance.userLinks.map((link, index) => {
+                      const isExternal = link.url.startsWith("http");
+                      const delay = `${
+                        (appearance.staticLinks?.length || 0) + index * 0.1
+                      }s`;
+
+                      return isExternal ? (
+                        <a
+                          key={`user-footer-${link.name}`}
+                          href={link.url}
+                          className="flex items-center space-x-2 opacity-80 hover:opacity-100 transition-smooth hover-lift text-sm py-1 hover:translate-x-1 group"
+                          style={{
+                            color: appearance.colors.text,
+                            animationDelay: delay,
+                          }}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink
+                            size={14}
+                            className="opacity-60 group-hover:opacity-100 transition-smooth"
+                          />
+                          <span>{link.name}</span>
+                        </a>
+                      ) : (
+                        <Link
+                          key={`user-footer-${link.name}`}
+                          to={link.url}
+                          className="flex items-center space-x-2 opacity-80 hover:opacity-100 transition-smooth hover-lift text-sm py-1 hover:translate-x-1 group"
+                          style={{
+                            color: appearance.colors.text,
+                            animationDelay: delay,
+                          }}
+                        >
+                          <ExternalLink
+                            size={14}
+                            className="opacity-60 group-hover:opacity-100 transition-smooth"
+                          />
+                          <span>{link.name}</span>
+                        </Link>
+                      );
+                    })}
                 </div>
               </div>
 
@@ -1942,24 +2034,43 @@ function Footer() {
                     Social Media
                   </h4>
                   <div className="flex flex-wrap gap-3 lg:justify-end">
-                    {(appearance.socialLinks || []).map((social, index) => (
-                      <a
-                        key={index}
-                        href={social.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-3 bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-smooth hover-scale relative overflow-hidden group"
-                        style={{ animationDelay: `${index * 0.1}s` }}
-                        title={social.name}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-smooth"></div>
-                        {renderSocialIcon(
-                          social.icon,
-                          18,
-                          "hover:scale-110 transition-transform duration-300 relative z-10"
-                        )}
-                      </a>
-                    ))}
+                    {(appearance.socialLinks || []).map((social, index) => {
+                      const isExternal = social.url.startsWith("http");
+                      const commonProps = {
+                        key: index,
+                        className:
+                          "p-3 bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-smooth hover-scale relative overflow-hidden group",
+                        style: { animationDelay: `${index * 0.1}s` },
+                        title: social.name,
+                      };
+
+                      const icon = renderSocialIcon(
+                        social.icon,
+                        18,
+                        "hover:scale-110 transition-transform duration-300 relative z-10"
+                      );
+
+                      const hoverOverlay = (
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-smooth" />
+                      );
+
+                      return isExternal ? (
+                        <a
+                          {...commonProps}
+                          href={social.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {hoverOverlay}
+                          {icon}
+                        </a>
+                      ) : (
+                        <Link {...commonProps} to={social.url}>
+                          {hoverOverlay}
+                          {icon}
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -2172,57 +2283,44 @@ function Tools() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {tools.map((tool, index) => (
-                <div
-                  key={`${tool.name}-${index}`}
-                  className={`h-32 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-smooth hover-lift ${
-                    tool.comingSoon ? "cursor-not-allowed" : "cursor-pointer"
-                  } ${index < visibleCount ? "card-entrance" : "opacity-0"}`}
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  {tool.comingSoon ? (
-                    <div className="relative h-full w-full overflow-hidden group cursor-not-allowed rounded-xl hover-scale transition-smooth">
-                      {/* Background Image */}
-                      <div
-                        className="absolute inset-0 bg-cover bg-center bg-no-repeat filter brightness-50 blur-sm transform scale-110 group-hover:scale-125 transition-smooth"
-                        style={{
-                          backgroundImage: tool.imagePath
-                            ? `url(${tool.imagePath})`
-                            : "none",
-                          backgroundColor: tool.imagePath
-                            ? "transparent"
-                            : "#374151",
-                        }}
-                      />
+              {tools.map((tool, index) => {
+                const isExternal = tool.path.startsWith("http");
 
-                      {/* Gradient Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 opacity-80"></div>
+                const Wrapper = tool.comingSoon
+                  ? "div"
+                  : isExternal
+                  ? "a"
+                  : Link;
 
-                      {/* Coming Soon Badge */}
-                      <div className="absolute inset-0 flex items-center justify-center z-10 overflow-hidden">
-                        <div className="transform rotate-6 group-hover:rotate-0 transition-smooth bg-gray-800 bg-opacity-80 px-5 py-3 rounded-lg shadow-xl border border-gray-700 border-opacity-50">
-                          <span className="text-white text-xl font-medium tracking-wide">
-                            COMING SOON
-                          </span>
-                        </div>
-                      </div>
+                const wrapperProps = tool.comingSoon
+                  ? {}
+                  : isExternal
+                  ? {
+                      href: tool.path,
+                      className:
+                        "block h-full w-full overflow-hidden hover-scale transition-smooth",
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                    }
+                  : {
+                      to: tool.path,
+                      className:
+                        "block h-full w-full overflow-hidden hover-scale transition-smooth",
+                    };
 
-                      {/* Icon */}
-                      <div className="absolute top-3 left-3 bg-gray-800 bg-opacity-70 backdrop-blur-sm p-2 rounded-lg shadow-lg border border-gray-700 border-opacity-40 overflow-hidden">
-                        <div className="text-gray-200 opacity-90 group-hover:text-white group-hover:opacity-100 transition-smooth">
-                          {renderIcon(tool.icon)}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <a
-                      href={tool.path}
-                      className="block h-full w-full overflow-hidden hover-scale transition-smooth"
-                    >
-                      <div className="relative h-full w-full overflow-hidden group transition-smooth">
+                return (
+                  <div
+                    key={`${tool.name}-${index}`}
+                    className={`h-32 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-smooth hover-lift ${
+                      tool.comingSoon ? "cursor-not-allowed" : "cursor-pointer"
+                    } ${index < visibleCount ? "card-entrance" : "opacity-0"}`}
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    {tool.comingSoon ? (
+                      <div className="relative h-full w-full overflow-hidden group cursor-not-allowed rounded-xl hover-scale transition-smooth">
                         {/* Background Image */}
                         <div
-                          className="absolute inset-0 bg-cover bg-center bg-no-repeat filter blur-[2px] group-hover:blur-[6px] transform scale-110 group-hover:scale-125 transition-smooth"
+                          className="absolute inset-0 bg-cover bg-center bg-no-repeat filter brightness-50 blur-sm transform scale-110 group-hover:scale-125 transition-smooth"
                           style={{
                             backgroundImage: tool.imagePath
                               ? `url(${tool.imagePath})`
@@ -2233,48 +2331,84 @@ function Tools() {
                           }}
                         />
 
-                        {/* Gradient Overlays */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-transparent to-gray-800 opacity-40 group-hover:opacity-80 transition-smooth"></div>
-                        <div
-                          className={`absolute inset-0 bg-gradient-to-br ${tool.bgColor} opacity-0 group-hover:opacity-20 transition-smooth`}
-                        ></div>
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 opacity-80" />
 
-                        {/* Content - Centered on hover */}
-                        <div className="relative h-full w-full p-4 flex flex-col justify-between overflow-hidden">
-                          <div className="flex justify-between items-start overflow-hidden">
-                            <div className="bg-gray-800 bg-opacity-70 backdrop-blur-sm p-2 rounded-lg shadow-md border border-gray-700 border-opacity-30 group-hover:shadow-lg group-hover:border-gray-600 transition-smooth overflow-hidden">
-                              <div className="relative z-10">
-                                {renderIcon(tool.icon)}
-                              </div>
-                            </div>
-
-                            {tool.status && (
-                              <div className="transform group-hover:translate-x-0 group-hover:-translate-y-1 transition-smooth overflow-hidden">
-                                <StatusBadge status={tool.status} />
-                              </div>
-                            )}
+                        {/* Coming Soon Badge */}
+                        <div className="absolute inset-0 flex items-center justify-center z-10 overflow-hidden">
+                          <div className="transform rotate-6 group-hover:rotate-0 transition-smooth bg-gray-800 bg-opacity-80 px-5 py-3 rounded-lg shadow-xl border border-gray-700 border-opacity-50">
+                            <span className="text-white text-xl font-medium tracking-wide">
+                              COMING SOON
+                            </span>
                           </div>
+                        </div>
 
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-smooth">
-                            <h3 className="text-xl font-bold text-white text-center px-4">
-                              {tool.name}
-                            </h3>
-                          </div>
-
-                          <div className="bg-gradient-to-t from-gray-900 via-gray-800 to-transparent p-3 -mx-4 -mb-4 overflow-hidden group-hover:opacity-0 transition-smooth">
-                            <h3 className="text-base font-bold text-white mb-1">
-                              {tool.name}
-                            </h3>
-                            <p className="text-xs text-gray-300 line-clamp-2">
-                              {tool.description}
-                            </p>
+                        {/* Icon */}
+                        <div className="absolute top-3 left-3 bg-gray-800 bg-opacity-70 backdrop-blur-sm p-2 rounded-lg shadow-lg border border-gray-700 border-opacity-40 overflow-hidden">
+                          <div className="text-gray-200 opacity-90 group-hover:text-white group-hover:opacity-100 transition-smooth">
+                            {renderIcon(tool.icon)}
                           </div>
                         </div>
                       </div>
-                    </a>
-                  )}
-                </div>
-              ))}
+                    ) : (
+                      <Wrapper {...wrapperProps}>
+                        <div className="relative h-full w-full overflow-hidden group transition-smooth">
+                          {/* Background Image */}
+                          <div
+                            className="absolute inset-0 bg-cover bg-center bg-no-repeat filter blur-[2px] group-hover:blur-[6px] transform scale-110 group-hover:scale-125 transition-smooth"
+                            style={{
+                              backgroundImage: tool.imagePath
+                                ? `url(${tool.imagePath})`
+                                : "none",
+                              backgroundColor: tool.imagePath
+                                ? "transparent"
+                                : "#374151",
+                            }}
+                          />
+
+                          {/* Gradient Overlays */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-transparent to-gray-800 opacity-40 group-hover:opacity-80 transition-smooth" />
+                          <div
+                            className={`absolute inset-0 bg-gradient-to-br ${tool.bgColor} opacity-0 group-hover:opacity-20 transition-smooth`}
+                          />
+
+                          {/* Content */}
+                          <div className="relative h-full w-full p-4 flex flex-col justify-between overflow-hidden">
+                            <div className="flex justify-between items-start overflow-hidden">
+                              <div className="bg-gray-800 bg-opacity-70 backdrop-blur-sm p-2 rounded-lg shadow-md border border-gray-700 border-opacity-30 group-hover:shadow-lg group-hover:border-gray-600 transition-smooth overflow-hidden">
+                                <div className="relative z-10">
+                                  {renderIcon(tool.icon)}
+                                </div>
+                              </div>
+
+                              {tool.status && (
+                                <div className="transform group-hover:translate-x-0 group-hover:-translate-y-1 transition-smooth overflow-hidden">
+                                  <StatusBadge status={tool.status} />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-smooth">
+                              <h3 className="text-xl font-bold text-white text-center px-4">
+                                {tool.name}
+                              </h3>
+                            </div>
+
+                            <div className="bg-gradient-to-t from-gray-900 via-gray-800 to-transparent p-3 -mx-4 -mb-4 overflow-hidden group-hover:opacity-0 transition-smooth">
+                              <h3 className="text-base font-bold text-white mb-1">
+                                {tool.name}
+                              </h3>
+                              <p className="text-xs text-gray-300 line-clamp-2">
+                                {tool.description}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </Wrapper>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

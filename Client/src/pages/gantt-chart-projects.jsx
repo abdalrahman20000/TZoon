@@ -1859,7 +1859,6 @@ const GanttProjectsDashboard = () => {
     });
   };
 
-  // Function to save a new project
   const saveNewProject = () => {
     if (!newProject.name.trim()) {
       Swal.fire({

@@ -18,6 +18,7 @@ const ColorPicker = ({ currentColor, onColorChange }) => {
     "#fde047",
     "#fed7aa",
     "#fda4af",
+    "#000000",
   ];
 
   return (

@@ -1936,23 +1936,16 @@ const GanttProjectsDashboard = () => {
       })(),
     });
 
-    // SweetAlert2 success message with redirect
+    // SweetAlert2 success message without redirect
     Swal.fire({
       icon: "success",
       title: "Project Created!",
-      text: `${newProjectData.name} has been created successfully. Redirecting to Gantt chart...`,
+      text: `${newProjectData.name} has been created successfully. Click on the project card to open the Gantt chart.`,
       confirmButtonColor: appearance?.colors?.primary || "#3085d6",
-      timer: 2000,
+      timer: 3000,
       timerProgressBar: true,
-      showConfirmButton: false,
+      showConfirmButton: true,
     });
-
-    setTimeout(() => {
-      const slugifiedName = newProjectData.name
-        .toLowerCase()
-        .replace(/\s+/g, "-");
-      window.location.href = `/gantt-chart/${slugifiedName}`;
-    }, 1500);
   };
 
   if (!appearance) {

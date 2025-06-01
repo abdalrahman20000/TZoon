@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Swal from "sweetalert2";
 import Header from "../comonents/canvas/Header";
@@ -38,6 +38,11 @@ const Canvas = () => {
     hyperlink: 0,
     "hyperlink-image": 0,
   });
+
+  // Optimization: Use refs to track save state
+  const saveTimeoutRef = useRef(null);
+  const needsSaveRef = useRef(false);
+  const lastSaveDataRef = useRef(null);
 
   // Check if localStorage is available
   const isLocalStorageAvailable = () => {
@@ -136,8 +141,8 @@ const Canvas = () => {
     }
   };
 
-  // Save function with quota handling
-  const saveToLocalStorage = () => {
+  // Memoized save function to prevent recreating it constantly
+  const saveToLocalStorage = useCallback(() => {
     try {
       // Check if localStorage is available
       if (!isLocalStorageAvailable()) {
@@ -157,18 +162,19 @@ const Canvas = () => {
         timestamp: new Date().toISOString(),
       };
 
-      // Convert to string
+      // Optimization: Check if data actually changed before saving
       const dataString = JSON.stringify(dataToSave);
-      const dataSizeKB = Math.round(dataString.length / 1024);
+      if (lastSaveDataRef.current === dataString) {
+        return; // No changes, skip save
+      }
 
-      console.log(`💾 Saving data (${dataSizeKB}KB)...`);
+      const dataSizeKB = Math.round(dataString.length / 1024);
 
       // Save to localStorage
       localStorage.setItem(STORAGE_KEY, dataString);
-      console.log("✅ Data saved to localStorage successfully");
+      lastSaveDataRef.current = dataString;
+      needsSaveRef.current = false;
     } catch (error) {
-      console.error("❌ Error saving to localStorage:", error);
-
       // Handle quota exceeded error specifically
       if (
         error.name === "QuotaExceededError" ||
@@ -205,7 +211,7 @@ const Canvas = () => {
         });
       }
     }
-  };
+  }, [boxes, canvasStyle, nextId, headerRotation, footerRotation, editMode]);
 
   // Simple load function with better error handling
   const loadFromLocalStorage = () => {
@@ -216,11 +222,9 @@ const Canvas = () => {
       }
 
       const savedData = localStorage.getItem(STORAGE_KEY);
-      console.log("🔄 Loading data from localStorage...");
 
       if (savedData) {
         const parsedData = JSON.parse(savedData);
-        console.log("✅ Data found:", parsedData);
 
         // Validate data before loading
         if (parsedData && typeof parsedData === "object") {
@@ -250,13 +254,9 @@ const Canvas = () => {
           if (typeof parsedData.editMode === "boolean") {
             setEditMode(parsedData.editMode);
           }
-
-          console.log("✅ All data loaded successfully");
         } else {
-          console.warn("⚠️ Invalid data format in localStorage");
         }
       } else {
-        console.log("ℹ️ No saved data found, using defaults");
       }
     } catch (error) {
       console.error("❌ Error loading from localStorage:", error);
@@ -275,16 +275,10 @@ const Canvas = () => {
     setHasLoadedInitialData(true);
   }, []);
 
-  // Debounced save function
+  // Optimized: Mark when save is needed (runs much less frequently)
   useEffect(() => {
-    if (!hasLoadedInitialData) return; // Don't save until we've loaded initial data
-
-    const timer = setTimeout(() => {
-      console.log("💾 Auto-saving data...");
-      saveToLocalStorage();
-    }, 500); // Wait 500ms after last change
-
-    return () => clearTimeout(timer);
+    if (!hasLoadedInitialData) return;
+    needsSaveRef.current = true;
   }, [
     boxes,
     canvasStyle,
@@ -294,6 +288,19 @@ const Canvas = () => {
     editMode,
     hasLoadedInitialData,
   ]);
+
+  // Optimized: Single timer-based auto-save (much lighter)
+  useEffect(() => {
+    if (!hasLoadedInitialData) return;
+
+    const interval = setInterval(() => {
+      if (needsSaveRef.current) {
+        saveToLocalStorage();
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [hasLoadedInitialData, saveToLocalStorage]);
 
   const handleDragHandleClick = () => {
     const newRotation = headerRotation === 0 ? 90 : 0;
@@ -342,14 +349,12 @@ const Canvas = () => {
   };
 
   const updateBox = (id, updates) => {
-    console.log("🔄 Updating box:", id, updates);
     setBoxes((prevBoxes) =>
       prevBoxes.map((box) => (box.id === id ? { ...box, ...updates } : box))
     );
   };
 
   const deleteBox = (id) => {
-    console.log("🗑️ Deleting box:", id);
     setBoxes((prevBoxes) => prevBoxes.filter((box) => box.id !== id));
     if (selectedBox === id) {
       setSelectedBox(null);
@@ -357,8 +362,6 @@ const Canvas = () => {
   };
 
   const addBox = (type) => {
-    console.log("➕ Adding new box:", type);
-
     boxCounters.current[type] += 1;
     const count = boxCounters.current[type];
 
@@ -404,7 +407,6 @@ const Canvas = () => {
   };
 
   const updateCanvasStyle = (newStyle) => {
-    console.log("🎨 Canvas received style update:", newStyle);
     setCanvasStyle((prevStyle) => ({
       ...prevStyle,
       ...newStyle,
@@ -626,6 +628,7 @@ const Canvas = () => {
           }}
           editMode={editMode}
           headerRotation={headerRotation}
+          className="z-50"
         />
 
         {/* Make sure all panels have appropriate z-index that's still below header */}

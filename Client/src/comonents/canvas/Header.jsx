@@ -400,7 +400,7 @@ const styles = `
 `;
 
 const Header = ({ rotation = 0 }) => {
-  const [appearance, setAppearance] = useState(sampleAppearanceData);
+  const [appearance, setAppearance] = useState(null); // Start with null to show loading
   const [showAppearanceForm, setShowAppearanceForm] = useState(false);
   const [activeSection, setActiveSection] = useState("header");
   const [newLink, setNewLink] = useState({ name: "", url: "" });
@@ -415,101 +415,76 @@ const Header = ({ rotation = 0 }) => {
 
   const APPEARANCE_UPDATE_EVENT = "appearanceUpdate";
 
+  // Function to update appearance and save to localStorage
   const updateAppearance = useCallback((newData) => {
-    localStorage.setItem("appearance", JSON.stringify(newData));
-    setAppearance(newData);
-    window.dispatchEvent(new CustomEvent(APPEARANCE_UPDATE_EVENT));
+    try {
+      localStorage.setItem("appearance", JSON.stringify(newData));
+      setAppearance(newData);
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(
+        new CustomEvent(APPEARANCE_UPDATE_EVENT, { detail: newData })
+      );
+    } catch (error) {
+      console.error("Failed to save appearance to localStorage:", error);
+    }
   }, []);
 
-  useEffect(() => {
-    const savedAppearance = localStorage.getItem("appearance");
-    if (savedAppearance) {
-      setAppearance(JSON.parse(savedAppearance));
-    } else {
-      updateAppearance(sampleAppearanceData);
+  // Function to load appearance from localStorage
+  const loadAppearanceFromStorage = useCallback(() => {
+    try {
+      const savedAppearance = localStorage.getItem("appearance");
+      if (savedAppearance) {
+        const parsedAppearance = JSON.parse(savedAppearance);
+        setAppearance(parsedAppearance);
+        return parsedAppearance;
+      } else {
+        // If no saved data, use sample data and save it
+        updateAppearance(sampleAppearanceData);
+        return sampleAppearanceData;
+      }
+    } catch (error) {
+      console.error("Failed to load appearance from localStorage:", error);
+      // Fallback to sample data
+      setAppearance(sampleAppearanceData);
+      return sampleAppearanceData;
     }
   }, [updateAppearance]);
 
-  const handleAddLink = () => {
-    if (newLink.name && newLink.url) {
-      updateAppearance({
-        ...appearance,
-        userLinks: [...appearance.userLinks, newLink],
-      });
-      setNewLink({ name: "", url: "" });
-    }
-  };
+  // Load appearance data on component mount
+  useEffect(() => {
+    loadAppearanceFromStorage();
+  }, [loadAppearanceFromStorage]);
 
-  const handleDeleteLink = (index) => {
-    updateAppearance({
-      ...appearance,
-      userLinks: appearance.userLinks.filter((_, i) => i !== index),
-    });
-  };
-
-  const handleColorChange = (key, value) => {
-    updateAppearance({
-      ...appearance,
-      colors: { ...appearance.colors, [key]: value },
-    });
-  };
-
-  const handleThemeSelect = (theme) => {
-    updateAppearance({
-      ...appearance,
-      colors: {
-        ...appearance.colors,
-        ...theme.colors,
-      },
-    });
-  };
-
-  const handleExport = () => {
-    const dataStr = JSON.stringify(appearance, null, 2);
-    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(
-      dataStr
-    )}`;
-    const link = document.createElement("a");
-    link.setAttribute("href", dataUri);
-    link.setAttribute("download", "appearance.json");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleImport = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const importedData = JSON.parse(e.target.result);
-        updateAppearance(importedData);
-      } catch (error) {
-        alert("Invalid JSON file");
+  // Listen for appearance updates from other components/tabs
+  useEffect(() => {
+    const handleAppearanceUpdate = (event) => {
+      if (event.detail) {
+        setAppearance(event.detail);
+      } else {
+        loadAppearanceFromStorage();
       }
     };
-    reader.readAsText(file);
-  };
 
-  const handleSiteTitleChange = (e) => {
-    updateAppearance({ ...appearance, siteTitle: e.target.value });
-  };
+    // Listen for custom events
+    window.addEventListener(APPEARANCE_UPDATE_EVENT, handleAppearanceUpdate);
 
-  const handleLogoToggle = (e) => {
-    updateAppearance({ ...appearance, showLogo: e.target.checked });
-  };
+    // Listen for localStorage changes from other tabs
+    window.addEventListener("storage", (e) => {
+      if (e.key === "appearance") {
+        loadAppearanceFromStorage();
+      }
+    });
 
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      updateAppearance({ ...appearance, logoImage: e.target.result });
+    return () => {
+      window.removeEventListener(
+        APPEARANCE_UPDATE_EVENT,
+        handleAppearanceUpdate
+      );
+      window.removeEventListener("storage", loadAppearanceFromStorage);
     };
-    reader.readAsDataURL(file);
-  };
+  }, [loadAppearanceFromStorage]);
 
+  // Utility functions
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
   };
@@ -540,14 +515,149 @@ const Header = ({ rotation = 0 }) => {
     }
   };
 
+  // Updated handlers that properly update localStorage
+  const handleAddLink = () => {
+    if (newLink.name && newLink.url && appearance) {
+      const updatedAppearance = {
+        ...appearance,
+        userLinks: [...(appearance.userLinks || []), newLink],
+      };
+      updateAppearance(updatedAppearance);
+      setNewLink({ name: "", url: "" });
+    }
+  };
+
+  const handleDeleteLink = (index) => {
+    if (appearance) {
+      const updatedAppearance = {
+        ...appearance,
+        userLinks: (appearance.userLinks || []).filter((_, i) => i !== index),
+      };
+      updateAppearance(updatedAppearance);
+    }
+  };
+
+  const handleColorChange = (key, value) => {
+    if (appearance) {
+      const updatedAppearance = {
+        ...appearance,
+        colors: { ...appearance.colors, [key]: value },
+      };
+      updateAppearance(updatedAppearance);
+    }
+  };
+
+  const handleThemeSelect = (theme) => {
+    if (appearance) {
+      const updatedAppearance = {
+        ...appearance,
+        colors: {
+          ...appearance.colors,
+          ...theme.colors,
+        },
+      };
+      updateAppearance(updatedAppearance);
+    }
+  };
+
+  const handleSiteTitleChange = (e) => {
+    if (appearance) {
+      const updatedAppearance = {
+        ...appearance,
+        siteTitle: e.target.value,
+      };
+      updateAppearance(updatedAppearance);
+    }
+  };
+
+  const handleLogoToggle = (e) => {
+    if (appearance) {
+      const updatedAppearance = {
+        ...appearance,
+        showLogo: e.target.checked,
+      };
+      updateAppearance(updatedAppearance);
+    }
+  };
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file || !appearance) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const updatedAppearance = {
+        ...appearance,
+        logoImage: e.target.result,
+      };
+      updateAppearance(updatedAppearance);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddSocialLink = () => {
+    if (newSocialLink.name && newSocialLink.url && appearance) {
+      const updatedAppearance = {
+        ...appearance,
+        socialLinks: [...(appearance.socialLinks || []), newSocialLink],
+      };
+      updateAppearance(updatedAppearance);
+      setNewSocialLink({ name: "", url: "", icon: "Github" });
+    }
+  };
+
+  const handleDeleteSocialLink = (index) => {
+    if (appearance) {
+      const updatedAppearance = {
+        ...appearance,
+        socialLinks: (appearance.socialLinks || []).filter(
+          (_, i) => i !== index
+        ),
+      };
+      updateAppearance(updatedAppearance);
+    }
+  };
+
+  const handleExport = () => {
+    if (appearance) {
+      const dataStr = JSON.stringify(appearance, null, 2);
+      const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(
+        dataStr
+      )}`;
+      const link = document.createElement("a");
+      link.setAttribute("href", dataUri);
+      link.setAttribute("download", "appearance.json");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result);
+        updateAppearance(importedData);
+      } catch (error) {
+        alert("Invalid JSON file");
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Show loading state while appearance data is being loaded
   if (!appearance) {
     return (
       <motion.header
-        className="absolute top-0 left-0 w-full h-16 backdrop-blur-lg border-b z-50" // Changed from z-40 to z-50
+        className="absolute top-0 left-0 w-full h-16 backdrop-blur-lg border-b z-50"
         style={{
-          backgroundColor: `${appearance.colors.primary}ee`,
-          borderColor: `${appearance.colors.primary}30`,
-          boxShadow: `0 8px 32px ${appearance.colors.shadow}40`,
+          backgroundColor: "#0a1a2fee",
+          borderColor: "#0a1a2f30",
+          boxShadow: "0 8px 32px #07142140",
           transform: `rotateX(${rotation}deg)`,
           transformOrigin: "top center",
           backfaceVisibility: "hidden",
@@ -574,8 +684,11 @@ const Header = ({ rotation = 0 }) => {
     <>
       <style>{styles}</style>
       <motion.header
-        className="absolute top-0 left-0 w-full h-16 backdrop-blur-lg bg-gray-900/90 border-b border-gray-800 z-50 flex items-center justify-center" // Changed from z-40 to z-50
+        className="absolute top-0 left-0 w-full h-16 backdrop-blur-lg border-b z-50 flex items-center justify-center"
         style={{
+          backgroundColor: `${appearance.colors.primary}ee`,
+          borderColor: `${appearance.colors.primary}30`,
+          boxShadow: `0 8px 32px ${appearance.colors.shadow}40`,
           transform: `rotateX(${rotation}deg)`,
           transformOrigin: "top center",
           backfaceVisibility: "hidden",

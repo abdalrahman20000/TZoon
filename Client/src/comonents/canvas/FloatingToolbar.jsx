@@ -45,13 +45,12 @@ const FloatingToolbar = ({
     >
       <AnimatePresence mode="wait">
         {isCollapsed ? (
-          // Collapsed state - show only eye icon with transparent background
           <motion.div
             key="collapsed"
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: "auto", opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.4 }}
           >
             <motion.button
               whileHover={{ scale: 1.1 }}

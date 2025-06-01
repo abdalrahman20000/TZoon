@@ -12,7 +12,6 @@ function App() {
       <BrowserRouter basename="/TZoon/">
         <Routes>
           <Route path="/" element={<Canvas />} />
-          {/* <Route path="/" element={<Tools />} /> */}
           <Route path="/tools" element={<Tools />} />
           <Route path="/gantt-chart/:projectName" element={<GanttChart />} />
           <Route

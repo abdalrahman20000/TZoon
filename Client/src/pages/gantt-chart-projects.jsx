@@ -1809,6 +1809,47 @@ const GanttProjectsDashboard = () => {
     fileInputRef.current.click();
   };
 
+  // Function to delete a project
+  const deleteProject = (projectId, projectName, event) => {
+    // Prevent navigation to the Gantt chart
+    event.preventDefault();
+    event.stopPropagation();
+
+    Swal.fire({
+      title: "Delete Project",
+      text: `Are you sure you want to delete "${projectName}"? This action cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: appearance?.colors?.primary || "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Remove project from state
+        const updatedProjects = projects.filter(
+          (project) => project.id !== projectId
+        );
+        setProjects(updatedProjects);
+
+        // Update localStorage
+        localStorage.setItem("ganttProjects", JSON.stringify(updatedProjects));
+
+        // Show success message
+        Swal.fire({
+          icon: "success",
+          title: "Project Deleted!",
+          text: `"${projectName}" has been deleted successfully.`,
+          confirmButtonColor: appearance?.colors?.primary || "#3085d6",
+          timer: 2000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+        });
+      }
+    });
+  };
+
   // Function to handle new project form input changes
   const handleNewProjectInputChange = (e) => {
     const { name, value } = e.target;
@@ -1913,6 +1954,7 @@ const GanttProjectsDashboard = () => {
       window.location.href = `/gantt-chart/${slugifiedName}`;
     }, 1500);
   };
+
   if (!appearance) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -2077,8 +2119,19 @@ const GanttProjectsDashboard = () => {
                               background: `linear-gradient(90deg, ${appearance.colors.primary} 0%, ${appearance.colors.secondary} 100%)`,
                             }}
                           ></div>
-                          <div className="p-6">
-                            <div className="flex justify-between items-start mb-4">
+                          <div className="p-6 relative">
+                            {/* Delete button */}
+                            <button
+                              onClick={(e) =>
+                                deleteProject(project.id, project.name, e)
+                              }
+                              className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 hover-scale z-10"
+                              title="Delete project"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+
+                            <div className="flex justify-between items-start mb-4 pr-8">
                               <h3 className="text-lg font-semibold text-gray-900">
                                 {project.name}
                               </h3>
